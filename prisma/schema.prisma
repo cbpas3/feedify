@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SourceType {
+  TEXT
+  URL
+}
+
+enum SourceStatus {
+  PENDING
+  PROCESSING
+  DONE
+  ERROR
+}
+
+enum VisualType {
+  QUOTE
+  CODE
+  DIAGRAM
+  STAT
+  TIP
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model ContentSource {
+  id         String       @id @default(cuid())
+  userId     String?      @map("user_id")
+  title      String
+  sourceType SourceType   @map("source_type")
+  rawContent String       @map("raw_content")
+  sourceUrl  String?      @map("source_url")
+  status     SourceStatus @default(PENDING)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  feedItems FeedItem[]
+
+  @@map("content_sources")
+}
+
+model FeedItem {
+  id              String     @id @default(cuid())
+  contentSourceId String     @map("content_source_id")
+  hook            String
+  body            String
+  visualType      VisualType @map("visual_type")
+  visualCode      String?    @map("visual_code")
+  orderIndex      Int        @map("order_index")
+  masteryLevel    Int        @default(0) @map("mastery_level")
+  nextReviewDate  DateTime?  @map("next_review_date")
+  lastReviewedAt  DateTime?  @map("last_reviewed_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  contentSource ContentSource @relation(fields: [contentSourceId], references: [id], onDelete: Cascade)
+
+  @@map("feed_items")
+}

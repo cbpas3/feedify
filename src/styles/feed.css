@@ -1,0 +1,29 @@
+/* Feed scroll-snap container */
+.feed-container {
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+.feed-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Each card snaps to fill the viewport */
+.feed-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Smooth momentum scroll on iOS */
+@supports (-webkit-touch-callout: none) {
+  .feed-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
