@@ -139,7 +139,6 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
 
       {/* Content */}
       <div className="relative flex flex-col h-full px-6 pb-safe-bottom" style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)' }}>
-        <div className="flex flex-col h-full max-w-lg mx-auto w-full">
         {/* Top: Visual type badge */}
         <div className="pt-4 pb-2">
           <span className={cn(
@@ -153,8 +152,11 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
 
         {/* Middle: Main content */}
         <div className="flex-1 flex flex-col justify-center gap-4">
-          {/* Hook headline */}
-          <h2 className="text-2xl font-bold text-white leading-tight tracking-tight">
+          {/* Hook headline — Fraunces for editorial character */}
+          <h2
+            className="text-[1.6rem] font-bold text-white leading-tight"
+            style={{ fontFamily: 'var(--font-headline)' }}
+          >
             {item.hook}
           </h2>
 
@@ -195,7 +197,6 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
           <div className="flex items-center justify-start">
             <MasteryDots level={item.masteryLevel} />
           </div>
-        </div>
         </div>
       </div>
     </motion.div>

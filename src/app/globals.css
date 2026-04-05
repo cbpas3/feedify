@@ -18,8 +18,9 @@
   --color-card-surface: oklch(14% 0.04 270);
   --color-card-border: oklch(22% 0.05 270);
 
-  /* Typography */
-  --font-display: 'Inter', system-ui, sans-serif;
+  /* Typography — DM Sans for UI, Fraunces for display headlines */
+  --font-display: var(--font-dm-sans, 'DM Sans'), system-ui, sans-serif;
+  --font-headline: var(--font-fraunces, 'Fraunces'), Georgia, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
   /* Border radius */
@@ -71,5 +72,53 @@ body {
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* Feed handles its own scroll */
+  overflow: hidden;
+}
+
+/* ─── App Shell ─────────────────────────────────────────────────────────────
+   Mobile: full-screen container.
+   Desktop: phone-column centred in the viewport with an atmospheric backdrop.
+   All position:absolute children (TopBar, overlays, banners) are scoped to
+   this element, so they never escape the column.
+───────────────────────────────────────────────────────────────────────────── */
+.app-shell {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate; /* new stacking context */
+}
+
+/* ─── Desktop layout ────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Atmospheric multi-layer background */
+    background:
+      radial-gradient(ellipse 50% 80% at 12% 50%, oklch(20% 0.12 270 / 0.65) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 88% 50%, oklch(15% 0.10 290 / 0.55) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 35% at 50% 105%, oklch(12% 0.08 260 / 0.4) 0%, transparent 50%),
+      /* Subtle dot grid */
+      radial-gradient(circle, oklch(28% 0.07 270 / 0.3) 1px, transparent 1px),
+      oklch(6% 0.04 270);
+    background-size: auto, auto, auto, 28px 28px, auto;
+  }
+
+  .app-shell {
+    width: 390px;
+    height: 100dvh;
+
+    /* Column delineation — subtle vertical borders with a brand glow */
+    border-left:  1px solid oklch(28% 0.08 270 / 0.5);
+    border-right: 1px solid oklch(28% 0.08 270 / 0.5);
+    box-shadow:
+      -1px  0   0   0   oklch(20% 0.06 270 / 0.3),
+       1px  0   0   0   oklch(20% 0.06 270 / 0.3),
+      -40px 0  80px 0   oklch(0% 0 0 / 0.6),
+       40px 0  80px 0   oklch(0% 0 0 / 0.6),
+        0   0  120px 0  oklch(45% 0.20 270 / 0.12);
+  }
 }

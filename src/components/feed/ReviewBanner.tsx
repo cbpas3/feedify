@@ -18,7 +18,7 @@ export function ReviewBanner({ dueCount, onStartReview }: ReviewBannerProps) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed bottom-6 left-4 right-4 z-40"
+          className="absolute bottom-6 left-4 right-4 z-40"
         >
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[--primary] shadow-lg shadow-[--primary]/30">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">

@@ -126,7 +126,7 @@ export function FeedPageClient({ initialItems, dueCount }: FeedPageClientProps) 
         : 0
 
   return (
-    <>
+    <div className="app-shell">
       <TopBar cardCount={items.length} onAddContent={() => setSourceInputOpen(true)} />
 
       <Feed
@@ -153,6 +153,6 @@ export function FeedPageClient({ initialItems, dueCount }: FeedPageClientProps) 
         progress={inference.modelProgress}
         isCached={inference.isCached}
       />
-    </>
+    </div>
   )
 }

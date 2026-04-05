@@ -21,7 +21,7 @@ export function ModelLoadingOverlay({ visible, progress, isCached = false }: Mod
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[--background]/95 backdrop-blur-md"
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[--background]/95 backdrop-blur-md"
         >
           {/* Progress ring */}
           <div className="relative w-28 h-28 flex items-center justify-center">
