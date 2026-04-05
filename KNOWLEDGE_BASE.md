@@ -87,7 +87,6 @@ feedify/
     └── app/
         ├── globals.css              # Tailwind v4 @theme tokens (oklch palette, shadcn vars)
         ├── layout.tsx               # Root layout: metadata, viewport, ClientProviders
-        ├── page.tsx                 # Redirect / → /feed
         ├── (feed)/
         │   ├── page.tsx             # Server component: fetches items, renders FeedPageClient
         │   ├── FeedPageClient.tsx   # Client shell: Feed + SourceInput + overlays wired together
@@ -514,6 +513,23 @@ Issues discovered and fixed after initial agent build:
 - **WCAG pinch-to-zoom**: `maximumScale: 1` was set in viewport meta, disabling pinch-to-zoom (accessibility violation). Removed.
 - **Broken card counter**: Counter in the mastery dots area showed incorrect values. Removed from MVP.
 - **Add button prominence**: TopBar button relabelled to "Add Content" with clear primary styling.
+
+### Vercel deployment fixes
+
+**`next.config.ts` — `allowedOrigins` blocked server actions in production**
+`serverActions: { allowedOrigins: ['localhost:3000'] }` was left in from development. Server actions called from the production domain were rejected. Removed the restriction entirely — Next.js defaults to same-origin only, which is correct for production.
+
+**`src/app/page.tsx` — duplicate route caused `clientReferenceManifest` invariant**
+Both `app/page.tsx` (re-exporting `(feed)/page`) and `app/(feed)/page.tsx` resolved to the `/` route. Next.js route groups don't add path segments, so both files mapped to the same path. During static generation, Next.js threw `Invariant: Expected clientReferenceManifest to be defined`. Fix: deleted `app/page.tsx` — the `(feed)` route group's `page.tsx` already owns `/`.
+
+**`src/workers/inference.worker.ts` — `InstanceType<>` fails on private constructor**
+`InstanceType<typeof LlmInference>` caused a TypeScript error because `LlmInference` has a private constructor, which TypeScript does not allow as a constraint for `InstanceType<>`. Fixed by typing `llmInstance` as `import('@mediapipe/tasks-genai').LlmInference` directly.
+
+**`src/workers/opfs-cache.ts` — `Uint8Array<ArrayBufferLike>` not assignable to `FileSystemWritableFileStream.write()`**
+The `write()` method's type signature expects `Uint8Array<ArrayBuffer>`, but `ReadableStreamDefaultReader.read()` returns `Uint8Array<ArrayBufferLike>` (which includes `SharedArrayBuffer`). In practice the data is always a plain `ArrayBuffer`, so a cast `value as unknown as Uint8Array<ArrayBuffer>` is safe.
+
+**`src/tests/unit/useInference.test.ts` — narrowed literal type incompatible with `run()` return**
+`typeof mockValidItems` narrowed `visual_type` to the literal `"TIP"`, but `run()` returns `ValidatedFeedItem[] | null` with the full `VisualType` enum. Changed the result variable type to `ValidatedFeedItem[] | null`.
 
 ---
 
