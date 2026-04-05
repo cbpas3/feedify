@@ -12,24 +12,23 @@ function modelFileName(version: string): string {
 }
 
 /**
- * Check if a model version is cached and has the expected byte size.
+ * Check if a model version is cached and non-empty.
  * Returns the file handle if valid, null otherwise.
  */
 export async function checkModelCache(
   version: string,
-  expectedBytes?: number
+  _expectedBytes?: number
 ): Promise<FileSystemFileHandle | null> {
   try {
     const dir = await getModelDir()
     const fileHandle = await dir.getFileHandle(modelFileName(version))
-    if (expectedBytes !== undefined) {
-      const file = await fileHandle.getFile()
-      if (file.size !== expectedBytes) {
-        console.warn(`[OPFS] Cache size mismatch: expected ${expectedBytes}, got ${file.size}. Evicting.`)
-        await dir.removeEntry(modelFileName(version))
-        return null
-      }
+    const file = await fileHandle.getFile()
+    if (file.size === 0) {
+      console.warn('[OPFS] Cached model file is empty. Evicting.')
+      await dir.removeEntry(modelFileName(version))
+      return null
     }
+    console.log(`[OPFS] Cache hit: ${modelFileName(version)} (${(file.size / 1e9).toFixed(2)} GB)`)
     return fileHandle
   } catch {
     return null

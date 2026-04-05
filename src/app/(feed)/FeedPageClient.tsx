@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Feed } from '@/components/feed/Feed'
 import { TopBar } from '@/components/nav/TopBar'
@@ -19,6 +19,11 @@ export function FeedPageClient({ initialItems, dueCount }: FeedPageClientProps) 
   const router = useRouter()
   const [items, setItems] = useState<FeedItem[]>(initialItems)
   const [sourceInputOpen, setSourceInputOpen] = useState(false)
+
+  // Sync state when server component re-renders with fresh data (e.g. after router.refresh())
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
   const inference = useInference()
 
   const handleMasteryUpdate = useCallback(
@@ -93,6 +98,8 @@ export function FeedPageClient({ initialItems, dueCount }: FeedPageClientProps) 
         return 'AI model ready — starting inference...'
       case 'inferring':
         return 'Generating your learning feed...'
+      case 'error':
+        return `Error: ${inference.error ?? 'Something went wrong'}`
       default:
         return 'Processing...'
     }
@@ -108,13 +115,14 @@ export function FeedPageClient({ initialItems, dueCount }: FeedPageClientProps) 
   // modal is not already open (the modal shows inline progress otherwise).
   const showOverlay = inference.status === 'loading-model' && !sourceInputOpen
 
-  // Progress value forwarded to SourceInput: use modelProgress during download,
-  // 100 once we are past that phase.
+  // Progress value forwarded to SourceInput:
+  // - downloading: 0–100 from modelProgress
+  // - generating: 0–99 from token-driven inferenceProgress
   const processingProgress =
     inference.status === 'loading-model'
       ? inference.modelProgress
       : inference.status === 'inferring'
-        ? 100
+        ? inference.inferenceProgress
         : 0
 
   return (

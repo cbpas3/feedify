@@ -100,7 +100,7 @@ export function SourceInput({
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors',
                   tab === t
-                    ? 'bg-[--primary] text-white'
+                    ? 'bg-[--primary] text-white font-semibold'
                     : 'text-[--muted-foreground] hover:text-[--foreground]'
                 )}
               >
@@ -164,7 +164,7 @@ export function SourceInput({
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="w-full h-12 text-base font-semibold gap-2"
+            className="w-full h-12 text-base font-semibold gap-2 transition-opacity duration-200 disabled:opacity-40"
           >
             {isProcessing ? (
               <>

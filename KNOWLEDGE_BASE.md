@@ -214,7 +214,7 @@ The `InferenceWorker` class lives in `src/workers/inference.worker.ts`. It's bun
 ### OPFS model cache
 The Gemma 4 INT4 quantized model is ~1.4 GB. After first download it's cached in the browser's Origin Private File System (OPFS) — a sandboxed filesystem that survives page reloads.
 
-**Critical design**: The download uses `ReadableStream` piped directly to an OPFS `FileSystemWritableFileStream`. This avoids materializing the full 1.4 GB ArrayBuffer in RAM. The cache validity check compares the file's byte size to a known constant (`NEXT_PUBLIC_GEMMA_MODEL_SIZE_BYTES`) — a mismatch triggers automatic cache eviction and re-download.
+**Critical design**: The download uses `ReadableStream` piped directly to an OPFS `FileSystemWritableFileStream`. This avoids materializing the full 1.4 GB ArrayBuffer in RAM. Cache validity is determined by file existence and non-zero size only — **no byte-size comparison**. The original design compared `file.size` to `NEXT_PUBLIC_GEMMA_MODEL_SIZE_BYTES`, but this caused a re-download on every refresh because the env var (set to a round number) never matched the actual file size. The `_expectedBytes` parameter is kept for API compatibility but ignored.
 
 ### Prompt engineering and token budget
 The model has a 128K context window. `prompt-builder.ts` handles:
@@ -262,6 +262,8 @@ CSS properties `scroll-snap-type` and `scroll-snap-align` can't be cleanly expre
 ### `router.refresh()` instead of `router.push()`
 After inference completes and feed items are saved, the page calls `router.refresh()`. This re-runs the server component's Prisma query without a full navigation, preserving the client component's state (Worker instance, modal state).
 
+**Critical**: `useState(initialItems)` only runs on first mount — `router.refresh()` delivers new props to `FeedPageClient` but React ignores them because the state already exists. A `useEffect` in `FeedPageClient` syncs `items` state whenever `initialItems` changes, so newly generated cards actually appear after a refresh.
+
 ### Zod v3 (not v4)
 `package.json` pins `"zod": "^3.24.1"` because Zod v4 has breaking API changes. The schemas use standard v3 patterns (`.min()`, `.max()`, `.nativeEnum()`, `.refine()`).
 
@@ -300,7 +302,7 @@ All routes return `ApiResponse<T>` shape: `{ data: T, error: null }` or `{ data:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key |
 | `NEXT_PUBLIC_GEMMA_MODEL_URL` | Yes | Direct URL to the `.task` model binary |
 | `NEXT_PUBLIC_GEMMA_MODEL_VERSION` | Yes | Cache key string, e.g. `gemma4-int4-v1` |
-| `NEXT_PUBLIC_GEMMA_MODEL_SIZE_BYTES` | Yes | Expected model byte size for cache validation |
+| `NEXT_PUBLIC_GEMMA_MODEL_SIZE_BYTES` | Yes | Set to `"0"` — size check is disabled; cache validity is determined by file existence + non-zero size only |
 
 `NEXT_PUBLIC_*` vars are inlined at build time by webpack (available inside Web Workers via `process.env.*`).
 
@@ -447,10 +449,10 @@ npm run start
 ## 14. Known Issues and Constraints
 
 ### Model URL must be configured
-`NEXT_PUBLIC_GEMMA_MODEL_URL` must point to a valid, CORS-accessible URL serving the Gemma 4 INT4 `.task` binary. Without it, `loadModel()` throws immediately. Google's public MediaPipe model storage URLs may have availability or rate-limiting constraints — consider hosting the model binary yourself.
+`NEXT_PUBLIC_GEMMA_MODEL_URL` must point to a valid, CORS-accessible URL serving the Gemma 4 E2B `.task` binary. Without it, `loadModel()` throws immediately. The model is currently served from HuggingFace (`litert-community/gemma-4-E2B-it-litert-lm`). Recommended browser: Chrome with WebGPU enabled.
 
 ### First-run download blocks inference
-On first use, the ~1.4 GB model download must complete before any inference can run. The `ModelLoadingOverlay` shows a progress ring during this time. Subsequent loads read from OPFS (< 5 seconds). If the user closes the tab mid-download, the partial OPFS write is detected by the byte-size mismatch check and the download restarts from the beginning (no resume support).
+On first use, the ~2 GB model download must complete before any inference can run. Two progress indicators exist: the inline `Progress` bar inside `SourceInput` modal (for downloads triggered while the modal is open) and the full-screen `ModelLoadingOverlay` SVG ring (shown only when the modal is **closed** during download). Subsequent loads read from OPFS (< 5 seconds). If the user closes the tab mid-download, the partial OPFS write is detected (zero-size file check) and the download restarts from the beginning (no resume support).
 
 ### mediapipe constrained decoding not supported
 `@mediapipe/tasks-genai` does not implement grammar-constrained decoding (unlike llama.cpp). The JSON repair pipeline (`json-repair.ts`) compensates for model output that deviates from the schema, but extremely poor model outputs with no recoverable JSON array will produce an error. The zero-shot prompt is tuned to reduce this — temperature is set to `0.1` for determinism.
@@ -469,7 +471,53 @@ Any third-party script or resource that doesn't serve `Cross-Origin-Resource-Pol
 
 ---
 
-## 15. Agent Build History
+## 15. Post-Build Fixes
+
+Issues discovered and fixed after initial agent build:
+
+### `.env` password escaping (dotenv interpolation)
+**Problem**: The Supabase database password contains `$QF`. dotenv treated `$QF` as an environment variable reference and interpolated it to an empty string, causing authentication failures.
+**Fix**: URL-encode `$` as `%24` in both `DATABASE_URL` and `DIRECT_URL`. Dotenv does not decode percent-encoding — the raw `%24` reaches the DB driver which decodes it correctly.
+
+### Prisma reads `.env`, not `.env.local`
+**Problem**: Prisma CLI (`prisma migrate deploy`, `prisma generate`) reads `.env` — it does not use Next.js's `.env.local` convention. Migrations failed with "DIRECT_URL not found".
+**Fix**: Maintain credentials in `.env` (not `.env.local`). Delete any `.env.local` file to prevent placeholder values from shadowing `.env`.
+
+### Migration 0003 RLS syntax error on Supabase (PostgreSQL 15)
+**Problem**: `CREATE POLICY IF NOT EXISTS` syntax was used in the RLS migration. This syntax was added in PostgreSQL 17; Supabase runs PostgreSQL 15.
+**Fix**: Remove `IF NOT EXISTS` from all `CREATE POLICY` statements. Rolled back the migration with `prisma migrate resolve --rolled-back 0003_rls`, fixed the SQL, then re-ran `prisma migrate deploy`.
+
+### Seed script missing `--env-file`
+**Problem**: `tsx prisma/seed.ts` doesn't automatically load `.env`. The seed script used Prisma client which needs `DATABASE_URL`.
+**Fix**: Updated `package.json` `db:seed` script to `tsx --env-file .env prisma/seed.ts`.
+
+### 404 on `/feed`
+**Problem**: `src/app/page.tsx` redirected to `/feed`, but `(feed)` is a Next.js route group — it maps to `/`, not `/feed`. Navigating to `/feed` hit a 404.
+**Fix**: Changed `page.tsx` to re-export the feed page (`export { default } from './(feed)/page'`). Changed `process/page.tsx` redirect target from `/feed` to `/`.
+
+### OPFS cache eviction on every refresh
+**Problem**: `checkModelCache` compared `file.size !== expectedBytes`. The env var was a round number (`2000000000`) and never matched the actual downloaded file size, causing a re-download on every page load.
+**Fix**: Removed the size comparison. Cache is now valid if the file exists and has `size > 0`. The `_expectedBytes` parameter is kept but unused.
+
+### Feed not updating after inference completes
+**Problem**: After the full pipeline (create source → infer → save → `router.refresh()`), the feed remained empty. `useState(initialItems)` in `FeedPageClient` only uses `initialItems` on first mount — React ignores prop changes to state that already exists. `router.refresh()` delivered new data from the server but the feed state stayed stale.
+**Fix**: Added `useEffect(() => { setItems(initialItems) }, [initialItems])` in `FeedPageClient` to sync state when the server component re-renders with fresh data.
+
+### Progress bar for generation phase
+**Problem**: The `processingProgress` value during the `inferring` phase was hardcoded to `100`, so the progress bar jumped immediately to full rather than animating as tokens streamed.
+**Fix**: Added `inferenceProgress` and `tokenCount` to `useInference` state. The token streaming callback computes `Math.min(99, Math.round((tokenCount / ESTIMATED_MAX_TOKENS) * 100))` on each token. `processingProgress` in `FeedPageClient` now reads `inference.inferenceProgress` during the `inferring` phase.
+
+### UX / visual issues (post-first-render review)
+- **QUOTE visual**: Was rendering the hook text again inside the blockquote. Fixed to show the body text instead.
+- **Content centering**: Cards lacked horizontal padding — added `px-6 max-w-lg mx-auto` to constrain card content on wide screens.
+- **Button weight parity**: "Got it!" and "Review Later" buttons had unequal visual weight. Both are now `outline` style with equal sizing.
+- **WCAG pinch-to-zoom**: `maximumScale: 1` was set in viewport meta, disabling pinch-to-zoom (accessibility violation). Removed.
+- **Broken card counter**: Counter in the mastery dots area showed incorrect values. Removed from MVP.
+- **Add button prominence**: TopBar button relabelled to "Add Content" with clear primary styling.
+
+---
+
+## 16. Agent Build History
 
 Feedify was built using a 6-agent team in the Claude Code multi-agent system. Each agent ran as a background subprocess using the `Agent` tool with `run_in_background: true`.
 
@@ -545,7 +593,7 @@ Files: 14 files across `vitest.config.ts`, `playwright.config.ts`, `src/tests/`,
 
 ---
 
-## 16. Parallel Execution Timeline
+## 17. Parallel Execution Timeline
 
 ```
 T+0s   A4 (types) ─────────────────────────────► done ~48s

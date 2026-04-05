@@ -29,11 +29,13 @@ export function TopBar({ cardCount = 0, onAddContent }: TopBarProps) {
         )}
         <Button
           onClick={onAddContent}
+          variant="default"
           size="sm"
-          className="gap-1.5 rounded-full px-3"
+          aria-label="Add new content"
+          className="gap-1.5 rounded-full px-4"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add
+          Add Content
         </Button>
       </div>
     </div>

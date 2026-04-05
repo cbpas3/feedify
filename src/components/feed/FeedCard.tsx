@@ -30,9 +30,14 @@ function VisualArea({ item }: { item: FeedItem }) {
     case VisualType.QUOTE:
       return (
         <div className="relative px-4 py-3 rounded-xl border border-amber-400/20 bg-amber-400/5">
-          <Quote className="absolute top-3 left-3 w-4 h-4 text-amber-400/40" />
-          <p className="pl-6 text-sm text-amber-100/80 italic leading-relaxed">
-            {item.hook}
+          <span
+            aria-hidden="true"
+            className="absolute top-2 left-3 text-5xl font-serif leading-none text-amber-400/30 select-none"
+          >
+            &ldquo;
+          </span>
+          <p className="pl-6 pt-4 text-sm text-amber-100/80 italic leading-relaxed">
+            {item.body}
           </p>
         </div>
       )
@@ -133,7 +138,8 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
       />
 
       {/* Content */}
-      <div className="relative flex flex-col h-full px-5 pt-safe-top pb-safe-bottom">
+      <div className="relative flex flex-col h-full px-6 pb-safe-bottom" style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)' }}>
+        <div className="flex flex-col h-full max-w-lg mx-auto w-full">
         {/* Top: Visual type badge */}
         <div className="pt-4 pb-2">
           <span className={cn(
@@ -155,8 +161,8 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
           {/* Visual area */}
           <VisualArea item={item} />
 
-          {/* Body text (hidden for CODE/TIP since visual area shows it) */}
-          {item.visualType !== VisualType.CODE && item.visualType !== VisualType.TIP && (
+          {/* Body text (hidden for CODE/TIP/QUOTE since visual area shows it) */}
+          {item.visualType !== VisualType.CODE && item.visualType !== VisualType.TIP && item.visualType !== VisualType.QUOTE && (
             <p className="text-base text-white/70 leading-relaxed">
               {item.body}
             </p>
@@ -177,7 +183,8 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
             </Button>
             <Button
               onClick={onGotIt}
-              className="flex-1 h-12 bg-[--primary] text-white"
+              variant="outline"
+              className="flex-1 h-12 border-[--primary] text-[--primary] bg-[--primary]/10 hover:bg-[--primary]/20 hover:text-[--primary]"
             >
               <ThumbsUp className="w-4 h-4" />
               Got it!
@@ -185,12 +192,10 @@ export function FeedCard({ item, isActive, onGotIt, onReviewLater }: FeedCardPro
           </div>
 
           {/* Progress & mastery */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-start">
             <MasteryDots level={item.masteryLevel} />
-            <span className="text-xs text-white/30">
-              {item.orderIndex + 1} of {item.orderIndex + 1}
-            </span>
           </div>
+        </div>
         </div>
       </div>
     </motion.div>
