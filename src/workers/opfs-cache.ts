@@ -51,7 +51,7 @@ export async function writeModelToCache(
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      await writable.write(value)
+      await writable.write(value as unknown as Uint8Array<ArrayBuffer>)
     }
     await writable.close()
   } catch (err) {

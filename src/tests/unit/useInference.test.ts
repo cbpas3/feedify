@@ -57,7 +57,7 @@ describe('useInference', () => {
 
     const { result } = renderHook(() => useInference())
 
-    let inferenceResult: typeof mockValidItems | null = null
+    let inferenceResult: import('@/lib/schemas').ValidatedFeedItem[] | null = null
     await act(async () => {
       inferenceResult = await result.current.run('Some text about TypeScript', 'source-1')
     })

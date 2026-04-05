@@ -10,7 +10,7 @@ import type { ValidatedFeedItem } from '@/lib/schemas'
 // Dynamic import — avoids bundling mediapipe into main chunk
 // Will be initialized in loadModel()
 let LlmInference: typeof import('@mediapipe/tasks-genai').LlmInference | null = null
-let llmInstance: InstanceType<typeof import('@mediapipe/tasks-genai').LlmInference> | null = null
+let llmInstance: import('@mediapipe/tasks-genai').LlmInference | null = null
 
 const MODEL_VERSION = process.env.NEXT_PUBLIC_GEMMA_MODEL_VERSION ?? 'gemma4-int4-v1'
 const MODEL_URL = process.env.NEXT_PUBLIC_GEMMA_MODEL_URL ?? ''
