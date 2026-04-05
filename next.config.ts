@@ -1,11 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000'],
-    },
-  },
   webpack(config, { isServer }) {
     // Enable WebAssembly support (required for @mediapipe/tasks-genai)
     config.experiments = {
