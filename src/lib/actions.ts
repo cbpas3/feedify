@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { ProcessSourceRequestSchema, FeedItemSchema, UpdateMasteryRequestSchema } from '@/lib/schemas'
 import type { CreateSourceResponse, ProcessSourceRequest, UpdateMasteryRequest } from '@/types/api'
@@ -75,6 +76,7 @@ export async function saveFeedItems(
       data: { status: 'DONE' },
     })
 
+    revalidatePath('/')
     return { count: parsed.data.items.length }
   } catch (error) {
     console.error('[saveFeedItems]', error)
