@@ -46,25 +46,16 @@ export function SourceInput({
   }, [])
 
   const handleSubmit = useCallback(() => {
-    if (tab === 'text' && text.trim()) {
+    if (text.trim()) {
       onSubmit({
         title: title.trim() || 'Untitled — ' + new Date().toLocaleDateString(),
         content: text.trim(),
         type: 'TEXT',
       })
-    } else if (tab === 'url' && url.trim()) {
-      onSubmit({
-        title: title.trim() || url,
-        content: url.trim(),
-        type: 'URL',
-      })
     }
-  }, [tab, text, url, title, onSubmit])
+  }, [text, title, onSubmit])
 
-  const canSubmit =
-    !isProcessing &&
-    ((tab === 'text' && text.trim().length > 0) ||
-      (tab === 'url' && url.trim().length > 0))
+  const canSubmit = !isProcessing && text.trim().length > 0
 
   return (
     <AnimatePresence>
@@ -170,91 +161,41 @@ export function SourceInput({
                     />
                   </div>
 
-                  {/* Tab switcher */}
-                  <div
-                    className="flex gap-1 rounded-xl"
-                    style={{ padding: '0.25rem', background: 'oklch(17% 0.008 260)', border: '1px solid oklch(20% 0.008 260)' }}
-                  >
-                    {(['text', 'url'] as const).map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setTab(t)}
-                        disabled={isProcessing}
-                        className={cn(
-                          'flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs font-semibold transition-all duration-200',
-                        )}
-                        style={tab === t ? {
-                          background: 'oklch(74% 0.17 68)',
-                          color: 'oklch(14% 0.010 68)',
-                        } : {
-                          color: 'oklch(48% 0.012 260)',
+                  {/* Input area */}
+                  <DragDropZone onFileDrop={handleFileDrop}>
+                    <textarea
+                      className="w-full rounded-xl text-sm leading-relaxed outline-none resize-none transition-all duration-150"
+                      style={{
+                        padding: '0.75rem 0.875rem',
+                        minHeight: '130px',
+                        maxHeight: '190px',
+                        border: '1px solid oklch(23% 0.012 260)',
+                        background: 'oklch(17% 0.008 260)',
+                        color: 'oklch(88% 0.010 80)',
+                      }}
+                      placeholder="Paste your article, notes, or any long-form text here… or drag & drop a .txt file"
+                      value={text}
+                      onChange={e => setText(e.target.value.slice(0, MAX_TEXT_LENGTH))}
+                      disabled={isProcessing}
+                      onFocus={e => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'oklch(74% 0.17 68 / 0.60)' }}
+                      onBlur={e => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'oklch(23% 0.012 260)' }}
+                    />
+                    <div className="flex justify-between mt-1.5" style={{ paddingLeft: '0.125rem', paddingRight: '0.125rem' }}>
+                      <span className="text-[11px]" style={{ color: 'oklch(38% 0.010 260)' }}>
+                        Drag & drop .txt or .md
+                      </span>
+                      <span
+                        className="text-[11px] tabular-nums"
+                        style={{
+                          color: text.length > MAX_TEXT_LENGTH * 0.9
+                            ? 'oklch(74% 0.17 68)'
+                            : 'oklch(38% 0.010 260)',
                         }}
                       >
-                        {t === 'text' ? <FileText className="w-3 h-3" /> : <Link className="w-3 h-3" />}
-                        {t === 'text' ? 'Paste Text' : 'Enter URL'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Input area */}
-                  {tab === 'text' ? (
-                    <DragDropZone onFileDrop={handleFileDrop}>
-                      <textarea
-                        className="w-full rounded-xl text-sm leading-relaxed outline-none resize-none transition-all duration-150"
-                        style={{
-                          padding: '0.75rem 0.875rem',
-                          minHeight: '130px',
-                          maxHeight: '190px',
-                          border: '1px solid oklch(23% 0.012 260)',
-                          background: 'oklch(17% 0.008 260)',
-                          color: 'oklch(88% 0.010 80)',
-                        }}
-                        placeholder="Paste your article, notes, or any long-form text here… or drag & drop a .txt file"
-                        value={text}
-                        onChange={e => setText(e.target.value.slice(0, MAX_TEXT_LENGTH))}
-                        disabled={isProcessing}
-                        onFocus={e => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'oklch(74% 0.17 68 / 0.60)' }}
-                        onBlur={e => { (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'oklch(23% 0.012 260)' }}
-                      />
-                      <div className="flex justify-between mt-1.5" style={{ paddingLeft: '0.125rem', paddingRight: '0.125rem' }}>
-                        <span className="text-[11px]" style={{ color: 'oklch(38% 0.010 260)' }}>
-                          Drag & drop .txt or .md
-                        </span>
-                        <span
-                          className="text-[11px] tabular-nums"
-                          style={{
-                            color: text.length > MAX_TEXT_LENGTH * 0.9
-                              ? 'oklch(74% 0.17 68)'
-                              : 'oklch(38% 0.010 260)',
-                          }}
-                        >
-                          {text.length.toLocaleString()} / {MAX_TEXT_LENGTH.toLocaleString()}
-                        </span>
-                      </div>
-                    </DragDropZone>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="url"
-                        className="w-full h-10 rounded-xl text-sm outline-none transition-all duration-150"
-                        style={{
-                          paddingLeft: '0.875rem', paddingRight: '0.875rem',
-                          border: '1px solid oklch(23% 0.012 260)',
-                          background: 'oklch(17% 0.008 260)',
-                          color: 'oklch(93% 0.010 80)',
-                        }}
-                        placeholder="https://example.com/article"
-                        value={url}
-                        onChange={e => setUrl(e.target.value)}
-                        disabled={isProcessing}
-                        onFocus={e => { (e.currentTarget as HTMLInputElement).style.borderColor = 'oklch(74% 0.17 68 / 0.60)' }}
-                        onBlur={e => { (e.currentTarget as HTMLInputElement).style.borderColor = 'oklch(23% 0.012 260)' }}
-                      />
-                      <p className="text-[11px]" style={{ paddingLeft: '0.125rem', paddingRight: '0.125rem', color: 'oklch(38% 0.010 260)' }}>
-                        Content extracted and processed locally on your device
-                      </p>
+                        {text.length.toLocaleString()} / {MAX_TEXT_LENGTH.toLocaleString()}
+                      </span>
                     </div>
-                  )}
+                  </DragDropZone>
 
                   {/* Processing status */}
                   {isProcessing && (
