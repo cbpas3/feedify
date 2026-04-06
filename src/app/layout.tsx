@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, DM_Sans } from 'next/font/google'
+import { Playfair_Display, DM_Sans } from 'next/font/google'
 import { ClientProviders } from '@/components/providers/ClientProviders'
 import './globals.css'
 
-const fraunces = Fraunces({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-fraunces',
+  variable: '--font-playfair',
   display: 'swap',
-  axes: ['opsz', 'SOFT', 'WONK'],
+  weight: ['400', '700', '900'],
+  style: ['normal', 'italic'],
 })
 
 const dmSans = DM_Sans({
@@ -27,20 +28,14 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0a0514',
+  themeColor: '#0C0C0E',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${dmSans.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${playfair.variable} ${dmSans.variable}`}>
       <body>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   )

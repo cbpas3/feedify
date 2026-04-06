@@ -1,0 +1,22 @@
+
+> feedify@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use by process 29029, using available port 3002 instead.
+   ▲ Next.js 15.5.14
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.1.237:3002
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1403ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1120ms (1568 modules)
+ ✓ Compiled /_not-found in 242ms (1573 modules)
+ GET /manifest.json 404 in 337ms
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function] {
+  digest: '871309447'
+}
+ GET / 200 in 4244ms
+ GET /manifest.json 404 in 39ms
+[?25h

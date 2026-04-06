@@ -531,6 +531,11 @@ The `write()` method's type signature expects `Uint8Array<ArrayBuffer>`, but `Re
 **`src/tests/unit/useInference.test.ts` — narrowed literal type incompatible with `run()` return**
 `typeof mockValidItems` narrowed `visual_type` to the literal `"TIP"`, but `run()` returns `ValidatedFeedItem[] | null` with the full `VisualType` enum. Changed the result variable type to `ValidatedFeedItem[] | null`.
 
+### UI Padding & Tailwind Compilation Failures
+**Problem**: The `.next` build cache was heavily corrupted when multiple `npm run dev` servers were inadvertently run on ports 3000, 3001, and 3002. This cache collision manifested as missing padding/margins (preventing Tailwind v4 classes like `px-5` or `p-6` from applying to the mobile layout) and eventually caused Next.js to crash completely with an `InvariantError` and `__webpack_modules__[moduleId] is not a function`.
+**Fix**: Terminated all stale Node instances, securely deleted the `.next` built directory using `rm -rf .next`, and refreshed a single development server.
+**Additional Safeguard implemented**: Replaced potentially cached/stuck Tailwind layout classes (`p-4`, `px-6`, etc.) with literal inline objects (`style={{ paddingLeft: '1.25rem', ... }}`) to completely isolate core dimension layouts across all components (`FeedCard.tsx`, `TopBar.tsx`, `SourceInput.tsx`, `ReviewBanner.tsx`, `ModelLoadingOverlay.tsx`, `EmptyFeedCTA.tsx`) from any future Tailwind JIT hiccups.
+
 ---
 
 ## 16. Agent Build History
